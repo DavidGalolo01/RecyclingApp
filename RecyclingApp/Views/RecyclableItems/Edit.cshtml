@@ -1,0 +1,96 @@
+﻿@model RecyclingApp.Models.RecyclableItem
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<h2>Edit</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        <h4>RecyclableItem</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @Html.HiddenFor(model => model.Id)
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RecyclableTypeId, "Recyclable Type", htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownList("RecyclableTypeId", (SelectList)ViewBag.RecyclableTypeId, htmlAttributes: new { @class = "form-control", id = "recyclableTypeId" })
+                @Html.ValidationMessageFor(model => model.RecyclableTypeId, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Weight, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Weight, new { htmlAttributes = new { @class = "form-control", id = "weight" } })
+                @Html.ValidationMessageFor(model => model.Weight, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ItemDescription, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.ItemDescription, new { htmlAttributes = new { @class = "form-control", maxlength = "150" } })
+                @Html.ValidationMessageFor(model => model.ItemDescription, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.ComputedRate, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                <p class="form-control-static" id="computedRate">@Model.ComputedRate</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const recyclableTypeId = document.getElementById('recyclableTypeId');
+        const weight = document.getElementById('weight');
+        const computedRateSpan = document.getElementById('computedRate');
+
+        function updateComputedRate() {
+            const weightValue = parseFloat(weight.value) || 0;
+            const typeId = parseInt(recyclableTypeId.value) || 0;
+
+            console.log(`Type ID: ${typeId}, Weight: ${weightValue}`); // Debug log
+
+            // Fetch the rate for the selected type asynchronously
+            fetch(`/RecyclableItems/GetRecyclableTypeRate/${typeId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const rate = data.rate || 0;
+                    const computedRate = Math.round(rate * weightValue, 2);
+                    computedRateSpan.textContent = computedRate.toFixed(2);
+                })
+                .catch(error => console.error('Error fetching rate:', error));
+        }
+
+        weight.addEventListener('input', updateComputedRate);
+        recyclableTypeId.addEventListener('change', updateComputedRate);
+
+        // Initialize the computed rate on page load
+        updateComputedRate();
+    });
+</script>
